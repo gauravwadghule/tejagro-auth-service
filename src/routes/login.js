@@ -38,12 +38,6 @@ router.post('/', async (req, res) => {
             return res.json({ message: 'Invalid OTP.', status: false });
         }
 
-        /* ── OTP expiry ──────────────────────────────────── */
-        if (client.otp_expires_at && new Date() > new Date(client.otp_expires_at)) {
-            writeLog('ERROR', 'OTP expired', { mobile_no });
-            return res.json({ message: 'OTP has expired. Please request a new one.', status: false });
-        }
-
         /* ── Referral validation ─────────────────────────── */
         let referral_from_id = null;
         if (referral_code) {
@@ -83,13 +77,13 @@ router.post('/', async (req, res) => {
         if (referral_code && referral_from_id) {
             const referral_to_id = client.client_id;
 
-            const [checkRef] = await conPool.execute(
+            const [checkRef] = await connectPool.execute(
                 'SELECT reference_id FROM reference_details WHERE referral_to=? LIMIT 1',
                 [referral_to_id]
             );
 
             if (checkRef.length === 0) {
-                const [insertRef] = await conPool.execute(
+                const [insertRef] = await connectPool.execute(
                     `INSERT INTO reference_details
                         (mobile_no, name, client_id, added_on, bdm_user_id, bdm_user_name,
                          sales_user_id, sales_user_name, android_referral, referral_from, referral_to)
