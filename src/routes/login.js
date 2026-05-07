@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 
-const { conPool } = require('../db');
+const { conPool, connectPool } = require('../db');
 const { writeLog } = require('../logger');
 
 router.post('/', async (req, res) => {
@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
 
     try {
         /* ── Client lookup ───────────────────────────────── */
-        const [rows] = await conPool.execute(
+        const [rows] = await connectPool.execute(
             `SELECT * FROM client_master
              WHERE client_mob=? OR client_person1_mob=? OR client_person2_mob2=?`,
             [mobile_no, mobile_no, mobile_no]
@@ -47,7 +47,7 @@ router.post('/', async (req, res) => {
         /* ── Referral validation ─────────────────────────── */
         let referral_from_id = null;
         if (referral_code) {
-            const [refRows] = await conPool.execute(
+            const [refRows] = await connectPool.execute(
                 'SELECT client_id, referral_code FROM client_master WHERE referral_code=?',
                 [referral_code]
             );

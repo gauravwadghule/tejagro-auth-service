@@ -2,8 +2,8 @@
  * Local schema setup for auth-service
  * Run once before starting the server: node setup-db.js
  *
- * tejagro_sales_login  → client_master, reference_details
- * tejagro_bdm_login    → android_activity_tracking, wallet_master, customer_wallet
+ * tejagro_sales_login  → reference_details
+ * tejagro_bdm_login    → client_master, android_activity_tracking, wallet_master, customer_wallet
  */
 
 require('dotenv').config({ path: '.env.example' });
@@ -18,26 +18,6 @@ async function setupSalesDb(con) {
     await con.query(`CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
     await con.query(`USE \`${db}\``);
     console.log(`\n[${db}]`);
-
-    await con.query(`
-        CREATE TABLE IF NOT EXISTS client_master (
-            client_id           INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-            client_mob          VARCHAR(15)   NOT NULL DEFAULT '',
-            client_person1_mob  VARCHAR(15)            DEFAULT NULL,
-            client_person2_mob2 VARCHAR(15)            DEFAULT NULL,
-            client_name         VARCHAR(100)           DEFAULT NULL,
-            reference_no        BIGINT UNSIGNED        DEFAULT NULL,
-            otp                 VARCHAR(10)            DEFAULT NULL,
-            otp_expires_at      DATETIME               DEFAULT NULL,
-            app_installation    TINYINT(1)    NOT NULL DEFAULT 0,
-            referral_code       VARCHAR(20)            DEFAULT NULL,
-            PRIMARY KEY (client_id),
-            KEY idx_client_mob  (client_mob),
-            KEY idx_person1_mob (client_person1_mob),
-            KEY idx_person2_mob (client_person2_mob2)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    `);
-    console.log('  ✓ client_master');
 
     await con.query(`
         CREATE TABLE IF NOT EXISTS reference_details (
@@ -65,6 +45,26 @@ async function setupBdmDb(con) {
     await con.query(`CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
     await con.query(`USE \`${db}\``);
     console.log(`\n[${db}]`);
+
+    await con.query(`
+        CREATE TABLE IF NOT EXISTS client_master (
+            client_id           INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+            client_mob          VARCHAR(15)   NOT NULL DEFAULT '',
+            client_person1_mob  VARCHAR(15)            DEFAULT NULL,
+            client_person2_mob2 VARCHAR(15)            DEFAULT NULL,
+            client_name         VARCHAR(100)           DEFAULT NULL,
+            reference_no        BIGINT UNSIGNED        DEFAULT NULL,
+            otp                 VARCHAR(10)            DEFAULT NULL,
+            otp_expires_at      DATETIME               DEFAULT NULL,
+            app_installation    TINYINT(1)    NOT NULL DEFAULT 0,
+            referral_code       VARCHAR(20)            DEFAULT NULL,
+            PRIMARY KEY (client_id),
+            KEY idx_client_mob  (client_mob),
+            KEY idx_person1_mob (client_person1_mob),
+            KEY idx_person2_mob (client_person2_mob2)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+    console.log('  ✓ client_master');
 
     await con.query(`
         CREATE TABLE IF NOT EXISTS android_activity_tracking (

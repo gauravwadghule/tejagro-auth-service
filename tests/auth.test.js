@@ -7,7 +7,7 @@ const TEST_MOBILE = process.env.TEST_MOBILE;  // 9168681342
 const TEST_OTP    = process.env.TEST_OTP;     // 1234
 
 afterAll(async () => {
-    await conPool.execute('DELETE FROM client_master WHERE client_mob = ?', [TEST_MOBILE]);
+    await connectPool.execute('DELETE FROM client_master WHERE client_mob = ?', [TEST_MOBILE]);
     await conPool.end();
     await connectPool.end();
 });
@@ -17,7 +17,7 @@ afterAll(async () => {
 describe('POST /api/v1/otp', () => {
     beforeAll(async () => {
         // Clean slate so tests always start without an existing record
-        await conPool.execute('DELETE FROM client_master WHERE client_mob = ?', [TEST_MOBILE]);
+        await connectPool.execute('DELETE FROM client_master WHERE client_mob = ?', [TEST_MOBILE]);
     });
 
     test('missing mobile_no returns 400', async () => {
@@ -55,8 +55,8 @@ describe('POST /api/v1/otp', () => {
 describe('POST /api/v1/login', () => {
     beforeAll(async () => {
         // Directly upsert the test client with a known OTP and future expiry
-        await conPool.execute('DELETE FROM client_master WHERE client_mob = ?', [TEST_MOBILE]);
-        await conPool.execute(
+        await connectPool.execute('DELETE FROM client_master WHERE client_mob = ?', [TEST_MOBILE]);
+        await connectPool.execute(
             `INSERT INTO client_master (client_mob, otp, otp_expires_at, app_installation, referral_code)
              VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 5 MINUTE), 1, '0000')`,
             [TEST_MOBILE, TEST_OTP]
@@ -118,7 +118,7 @@ describe('POST /api/v1/login', () => {
     });
 
     test('valid existing referral code does not trigger mismatch', async () => {
-        const [rows] = await conPool.execute(
+        const [rows] = await connectPool.execute(
             'SELECT referral_code FROM client_master WHERE client_mob = ?',
             [TEST_MOBILE]
         );
@@ -134,7 +134,7 @@ describe('POST /api/v1/login', () => {
     });
 
     test('expired OTP returns expiry error', async () => {
-        await conPool.execute(
+        await connectPool.execute(
             "UPDATE client_master SET otp_expires_at = DATE_SUB(NOW(), INTERVAL 5 MINUTE) WHERE client_mob = ?",
             [TEST_MOBILE]
         );
