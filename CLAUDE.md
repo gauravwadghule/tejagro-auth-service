@@ -41,8 +41,8 @@ The service is a two-endpoint Express API implementing OTP-based authentication 
 - `src/routes/login.js` — `POST /api/v1/login`: verifies OTP and expiry, validates an optional referral code, and returns a signed JWT containing client identity claims.
 
 **Database (`src/db.js`):** Two MySQL connection pools (10 connections each, IST timezone):
-- `conPool` → `tejagro_sales_login` (client accounts, OTP, referrals, wallet config)
-- `connectPool` → `tejagro_bdm_login` (activity tracking, customer wallet)
+- `conPool` → `tejagro_sales_login` (referral details)
+- `connectPool` → `tejagro_bdm_login` (client accounts/OTP, activity tracking, wallet config, customer wallet)
 
 **Services:**
 - `src/services/smsService.js` — HTTP call to InfyReachConnect API with OTP message

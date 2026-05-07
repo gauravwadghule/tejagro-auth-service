@@ -43,7 +43,7 @@ router.post('/', async (req, res) => {
 
     try {
         /* ── Client lookup ───────────────────────────────── */
-        const [rows] = await conPool.execute(
+        const [rows] = await connectPool.execute(
             `SELECT client_id, app_installation, referral_code
              FROM client_master
              WHERE client_mob=? OR client_person1_mob=? OR client_person2_mob2=?`,
@@ -67,13 +67,13 @@ router.post('/', async (req, res) => {
             let referral_code;
             if (!trimmedReferral) {
                 referral_code = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
-                await conPool.execute(
+                await connectPool.execute(
                     'UPDATE client_master SET otp=?, otp_expires_at=?, app_installation=1, referral_code=? WHERE client_id=?',
                     [otp, otpExpiresAt, referral_code, client_id]
                 );
             } else {
                 referral_code = trimmedReferral;
-                await conPool.execute(
+                await connectPool.execute(
                     'UPDATE client_master SET otp=?, otp_expires_at=?, app_installation=1 WHERE client_id=?',
                     [otp, otpExpiresAt, client_id]
                 );
@@ -105,7 +105,7 @@ router.post('/', async (req, res) => {
         const reference_no = Math.floor(Date.now() / 1000); // same as PHP time()
         const referral_code = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 
-        const [insertResult] = await conPool.execute(
+        const [insertResult] = await connectPool.execute(
             'INSERT INTO client_master (client_mob, reference_no, otp, otp_expires_at, app_installation, referral_code) VALUES (?, ?, ?, ?, 1, ?)',
             [mobile_no, reference_no, otp, otpExpiresAt, referral_code]
         );
