@@ -8,7 +8,7 @@ const options = {
             version: '1.0.0',
             description: 'OTP-based authentication API',
         },
-        servers: [{ url: 'http://localhost:3000' }],
+        servers: [{ url: 'http://agroauthservice.tejgroup.in/' }],
         components: {
             schemas: {
                 OtpRequest: {
