@@ -35,6 +35,9 @@ function getLogger(type) {
 
 function writeLog(type, message, data = {}) {
     getLogger(type).log(type.toLowerCase() === 'error' ? 'error' : 'info', message, { data });
+    if (type.toUpperCase() === 'ERROR') {
+        console.error(`[ERROR] ${message}`, data);
+    }
 }
 
 module.exports = { writeLog };
