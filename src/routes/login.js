@@ -58,16 +58,14 @@ router.post('/', async (req, res) => {
         }
 
         /* ── JWT ─────────────────────────────────────────── */
-        // Only include identity fields — not the full DB row
+        // Full client row in payload — matches the old PHP login.php exactly,
+        // so existing PHP endpoints can decode this token without code changes.
+        // Only change required on the PHP side: update the shared JWT secret.
         const payload = {
             iss:  process.env.JWT_ISSUER   || 'localhost',
             iat:  Math.floor(Date.now() / 1000),
             aud:  process.env.JWT_AUDIENCE || 'myusers',
-            data: {
-                client_id:   client.client_id,
-                client_mob:  client.client_mob,
-                client_name: client.client_name,
-            },
+            data: client,
         };
 
         const token = jwt.sign(payload, process.env.JWT_SECRET, { algorithm: 'HS512' });
