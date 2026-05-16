@@ -27,7 +27,7 @@ const options = {
                     properties: {
                         status:          { type: 'boolean', example: true },
                         message:         { type: 'string', example: 'OTP sent successfully' },
-                        referral_code:   { type: 'string', example: '7694', description: '4-char alphanumeric code assigned to this client' },
+                        referral_code:   { type: 'string', example: '472913', description: '6-digit numeric code assigned to this client' },
                         referral_status: { type: 'integer', enum: [0, 1], example: 0, description: '1 if this client was referred by someone, 0 otherwise' },
                     },
                 },

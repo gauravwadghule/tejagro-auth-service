@@ -1,10 +1,45 @@
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 
 const { conPool, connectPool } = require('../db');
 const { writeLog } = require('../logger');
 const { sendOtpSms } = require('../services/smsService');
 const { creditOpeningWallet } = require('../services/walletService');
+
+const REFERRAL_ALPHABET = '0123456789';
+const REFERRAL_CODE_LENGTH = 6;
+const REFERRAL_MAX_ATTEMPTS = 5;
+
+function generateReferralCode() {
+    let code = '';
+    for (let i = 0; i < REFERRAL_CODE_LENGTH; i++) {
+        code += REFERRAL_ALPHABET[crypto.randomInt(REFERRAL_ALPHABET.length)];
+    }
+    return code;
+}
+
+function isReferralCodeDuplicate(err) {
+    return err && err.code === 'ER_DUP_ENTRY' &&
+        /referral_code/i.test(err.sqlMessage || '');
+}
+
+async function persistWithUniqueReferralCode(operation) {
+    for (let attempt = 1; attempt <= REFERRAL_MAX_ATTEMPTS; attempt++) {
+        const code = generateReferralCode();
+        try {
+            const result = await operation(code);
+            return { code, result };
+        } catch (err) {
+            if (isReferralCodeDuplicate(err) && attempt < REFERRAL_MAX_ATTEMPTS) {
+                writeLog('ACTION', 'Referral code collision, retrying', { code, attempt });
+                continue;
+            }
+            throw err;
+        }
+    }
+    throw new Error('Failed to generate a unique referral code after retries');
+}
 
 router.post('/', async (req, res) => {
     writeLog('ACTION', 'API HIT START');
@@ -59,12 +94,13 @@ router.post('/', async (req, res) => {
             let referral_code;
 
             if (!trimmedReferral) {
-                referral_code = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
-
-                await connectPool.execute(
-                    'UPDATE client_master SET otp=?, app_installation=1, referral_code=? WHERE client_id=?',
-                    [otp, referral_code, client_id]
-                );
+                const persisted = await persistWithUniqueReferralCode(async (code) => {
+                    return connectPool.execute(
+                        'UPDATE client_master SET otp=?, app_installation=1, referral_code=? WHERE client_id=?',
+                        [otp, code, client_id]
+                    );
+                });
+                referral_code = persisted.code;
             } else {
                 referral_code = trimmedReferral;
 
@@ -96,12 +132,13 @@ router.post('/', async (req, res) => {
         }
 
         const reference_no = Math.floor(Date.now() / 1000);
-        const referral_code = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 
-        const [insertResult] = await connectPool.execute(
-            'INSERT INTO client_master (client_mob, reference_no, otp, app_installation, referral_code) VALUES (?, ?, ?, 1, ?)',
-            [mobile_no, reference_no, otp, referral_code]
-        );
+        const { code: referral_code, result: [insertResult] } = await persistWithUniqueReferralCode(async (code) => {
+            return connectPool.execute(
+                'INSERT INTO client_master (client_mob, reference_no, otp, app_installation, referral_code) VALUES (?, ?, ?, 1, ?)',
+                [mobile_no, reference_no, otp, code]
+            );
+        });
 
         const client_id = insertResult.insertId;
 
