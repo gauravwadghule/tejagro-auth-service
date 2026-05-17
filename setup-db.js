@@ -2,8 +2,8 @@
  * Local schema setup for auth-service
  * Run once before starting the server: node setup-db.js
  *
- * tejagro_sales_login  → reference_details
- * tejagro_bdm_login    → client_master, android_activity_tracking, wallet_master, customer_wallet
+ * tejagro_bdm_login    → client_master, reference_details
+ * tejagro_sales_login  → android_activity_tracking, wallet_master, customer_wallet
  */
 
 require('dotenv').config({ path: '.env.example' });
@@ -18,53 +18,6 @@ async function setupSalesDb(con) {
     await con.query(`CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
     await con.query(`USE \`${db}\``);
     console.log(`\n[${db}]`);
-
-    await con.query(`
-        CREATE TABLE IF NOT EXISTS reference_details (
-            reference_id     INT UNSIGNED NOT NULL AUTO_INCREMENT,
-            mobile_no        VARCHAR(15)           DEFAULT NULL,
-            name             VARCHAR(100)          DEFAULT NULL,
-            client_id        INT UNSIGNED          DEFAULT NULL,
-            added_on         DATETIME              DEFAULT NULL,
-            bdm_user_id      INT                   DEFAULT 0,
-            bdm_user_name    VARCHAR(100)          DEFAULT NULL,
-            sales_user_id    INT                   DEFAULT NULL,
-            sales_user_name  VARCHAR(100)          DEFAULT NULL,
-            android_referral TINYINT(1)            DEFAULT 0,
-            referral_from    INT UNSIGNED          DEFAULT NULL,
-            referral_to      INT UNSIGNED          DEFAULT NULL,
-            PRIMARY KEY (reference_id),
-            KEY idx_referral_to (referral_to)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    `);
-    console.log('  ✓ reference_details');
-}
-
-async function setupBdmDb(con) {
-    const db = process.env.DB_BDM_NAME;
-    await con.query(`CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
-    await con.query(`USE \`${db}\``);
-    console.log(`\n[${db}]`);
-
-    await con.query(`
-        CREATE TABLE IF NOT EXISTS client_master (
-            client_id           INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-            client_mob          VARCHAR(15)   NOT NULL DEFAULT '',
-            client_person1_mob  VARCHAR(15)            DEFAULT NULL,
-            client_person2_mob2 VARCHAR(15)            DEFAULT NULL,
-            client_name         VARCHAR(100)           DEFAULT NULL,
-            reference_no        BIGINT UNSIGNED        DEFAULT NULL,
-            otp                 VARCHAR(10)            DEFAULT NULL,
-            otp_expires_at      DATETIME               DEFAULT NULL,
-            app_installation    TINYINT(1)    NOT NULL DEFAULT 0,
-            referral_code       VARCHAR(20)            DEFAULT NULL,
-            PRIMARY KEY (client_id),
-            KEY idx_client_mob  (client_mob),
-            KEY idx_person1_mob (client_person1_mob),
-            KEY idx_person2_mob (client_person2_mob2)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    `);
-    console.log('  ✓ client_master');
 
     await con.query(`
         CREATE TABLE IF NOT EXISTS android_activity_tracking (
@@ -109,6 +62,54 @@ async function setupBdmDb(con) {
     } else {
         console.log('  - wallet_master seed skipped — active row already exists');
     }
+}
+
+async function setupBdmDb(con) {
+    const db = process.env.DB_BDM_NAME;
+    await con.query(`CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+    await con.query(`USE \`${db}\``);
+    console.log(`\n[${db}]`);
+
+    await con.query(`
+        CREATE TABLE IF NOT EXISTS client_master (
+            client_id           INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+            client_mob          VARCHAR(15)   NOT NULL DEFAULT '',
+            client_person1_mob  VARCHAR(15)            DEFAULT NULL,
+            client_person2_mob2 VARCHAR(15)            DEFAULT NULL,
+            client_name         VARCHAR(100)           DEFAULT NULL,
+            reference_no        BIGINT UNSIGNED        DEFAULT NULL,
+            otp                 VARCHAR(10)            DEFAULT NULL,
+            otp_expires_at      DATETIME               DEFAULT NULL,
+            app_installation    TINYINT(1)    NOT NULL DEFAULT 0,
+            referral_code       VARCHAR(20)            DEFAULT NULL,
+            PRIMARY KEY (client_id),
+            UNIQUE KEY uk_referral_code (referral_code),
+            KEY idx_client_mob  (client_mob),
+            KEY idx_person1_mob (client_person1_mob),
+            KEY idx_person2_mob (client_person2_mob2)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+    console.log('  ✓ client_master');
+
+    await con.query(`
+        CREATE TABLE IF NOT EXISTS reference_details (
+            reference_id     INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            mobile_no        VARCHAR(15)           DEFAULT NULL,
+            name             VARCHAR(100)          DEFAULT NULL,
+            client_id        INT UNSIGNED          DEFAULT NULL,
+            added_on         DATETIME              DEFAULT NULL,
+            bdm_user_id      INT                   DEFAULT 0,
+            bdm_user_name    VARCHAR(100)          DEFAULT NULL,
+            sales_user_id    INT                   DEFAULT NULL,
+            sales_user_name  VARCHAR(100)          DEFAULT NULL,
+            android_referral TINYINT(1)            DEFAULT 0,
+            referral_from    INT UNSIGNED          DEFAULT NULL,
+            referral_to      INT UNSIGNED          DEFAULT NULL,
+            PRIMARY KEY (reference_id),
+            KEY idx_referral_to (referral_to)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+    console.log('  ✓ reference_details');
 }
 
 async function run() {

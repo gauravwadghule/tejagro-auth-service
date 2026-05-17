@@ -72,23 +72,42 @@ router.post('/', async (req, res) => {
 
         /* ── Referral entry ──────────────────────────────── */
         let reference_entry_added = false;
+        let self_referral = false;
+        let referral_already_recorded = false;
+
         if (referral_code && referral_from_id) {
             const referral_to_id = client.client_id;
 
-            const [checkRef] = await connectPool.execute(
-                'SELECT reference_id FROM reference_details WHERE referral_to=? LIMIT 1',
-                [referral_to_id]
-            );
-
-            if (checkRef.length === 0) {
-                const [insertRef] = await connectPool.execute(
-                    `INSERT INTO reference_details
-                        (mobile_no, name, client_id, added_on, bdm_user_id, bdm_user_name,
-                         sales_user_id, sales_user_name, android_referral, referral_from, referral_to)
-                     VALUES (?, ?, ?, NOW(), 0, 'Android Referral', NULL, NULL, '1', ?, ?)`,
-                    [client.client_mob, client.client_name, referral_from_id, referral_from_id, referral_to_id]
+            if (referral_from_id === referral_to_id) {
+                self_referral = true;
+                writeLog('ACTION', 'Self-referral attempt ignored', {
+                    client_id: referral_to_id,
+                    referral_code,
+                });
+            } else {
+                const [checkRef] = await connectPool.execute(
+                    'SELECT reference_id, referral_from FROM reference_details WHERE referral_to=? LIMIT 1',
+                    [referral_to_id]
                 );
-                reference_entry_added = insertRef.affectedRows > 0;
+
+                if (checkRef.length === 0) {
+                    const [insertRef] = await connectPool.execute(
+                        `INSERT INTO reference_details
+                            (mobile_no, name, client_id, added_on, bdm_user_id, bdm_user_name,
+                             sales_user_id, sales_user_name, android_referral, referral_from, referral_to)
+                         VALUES (?, ?, ?, NOW(), 0, 'Android Referral', NULL, NULL, '1', ?, ?)`,
+                        [client.client_mob, client.client_name, referral_from_id, referral_from_id, referral_to_id]
+                    );
+                    reference_entry_added = insertRef.affectedRows > 0;
+                } else {
+                    referral_already_recorded = true;
+                    writeLog('ACTION', 'Referral attempt skipped — client already referred', {
+                        client_id: referral_to_id,
+                        attempted_referral_from: referral_from_id,
+                        existing_referral_from: checkRef[0].referral_from,
+                        attempted_code: referral_code,
+                    });
+                }
             }
         }
 
@@ -99,6 +118,8 @@ router.post('/', async (req, res) => {
             status:                true,
             message:               'Login successful.',
             reference_entry_added,
+            referral_already_recorded,
+            self_referral,
         });
 
     } catch (err) {

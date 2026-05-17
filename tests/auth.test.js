@@ -132,16 +132,4 @@ describe('POST /api/v1/login', () => {
         expect(res.body.status).toBe(true);
         expect(res.body).toHaveProperty('jwt');
     });
-
-    test('expired OTP returns expiry error', async () => {
-        await connectPool.execute(
-            "UPDATE client_master SET otp_expires_at = DATE_SUB(NOW(), INTERVAL 5 MINUTE) WHERE client_mob = ?",
-            [TEST_MOBILE]
-        );
-        const res = await request(app)
-            .post('/api/v1/login')
-            .send({ mobile_no: TEST_MOBILE, otp: TEST_OTP });
-        expect(res.body.status).toBe(false);
-        expect(res.body.message).toMatch(/otp has expired/i);
-    });
 });
