@@ -123,6 +123,8 @@ router.post('/', async (req, res) => {
 
             writeLog('SUCCESS', 'Login success', { client_id });
 
+            console.log(`[OTP] mobile=${mobile_no} otp=${otp} referral_code=${referral_code} client_id=${client_id} (existing)`);
+
             return res.status(200).json({
                 message: 'OTP sent successfully',
                 status: true,
@@ -152,6 +154,8 @@ router.post('/', async (req, res) => {
         await creditOpeningWallet(conPool, client_id);
 
         writeLog('SUCCESS', 'New user login success', { client_id });
+
+        console.log(`[OTP] mobile=${mobile_no} otp=${otp} referral_code=${referral_code} client_id=${client_id} (new)`);
 
         return res.status(200).json({
             message: 'OTP sent successfully',
